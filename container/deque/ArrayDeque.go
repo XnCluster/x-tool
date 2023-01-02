@@ -1,6 +1,9 @@
 package deque
 
-import "x-tool/util/arrays"
+import (
+	"fmt"
+	"x-tool/util/arrays"
+)
 
 type ArrayDeque struct {
 	elements   []interface{}
@@ -41,7 +44,26 @@ func (a *ArrayDeque) PeekFirst() interface{} {
 	return a.getFist()
 }
 
+func (a *ArrayDeque) OfferFirst(e interface{}) {
+	a.addFist(e)
+}
+
+func (a *ArrayDeque) PollLast() interface{} {
+	return a.removeLast()
+}
+
+func (a *ArrayDeque) IsEmpty() bool {
+	return a.head == a.tail
+}
+
+func (a *ArrayDeque) Size() int {
+	return (a.tail - a.head) & (cap(a.elements) - 1)
+}
+
 func (a *ArrayDeque) addFist(e interface{}) {
+	if e == nil {
+		panic(fmt.Sprintf("null point e: %v", e))
+	}
 	a.head = (a.head - 1) & (cap(a.elements) - 1)
 	a.elements[a.head] = e
 	if a.head == a.tail {
@@ -50,9 +72,12 @@ func (a *ArrayDeque) addFist(e interface{}) {
 }
 
 func (a *ArrayDeque) addLast(e interface{}) {
+	if e == nil {
+		panic(fmt.Sprintf("null point e: %v", e))
+	}
 	a.elements[a.tail] = e
-	a.tail++
-	if a.tail&(cap(a.elements)-1) == a.head {
+	a.tail = (a.tail + 1) & (cap(a.elements) - 1)
+	if a.tail == a.head {
 		a.doubleCapacity()
 	}
 }
@@ -84,14 +109,51 @@ func (a *ArrayDeque) removeLast() interface{} {
 }
 
 func (a *ArrayDeque) doubleCapacity() {
+	if a.head != a.tail {
+		panic("ArrayDeque grow fail")
+	}
 	p := a.head
 	n := cap(a.elements)
 	r := n - p
 	newCapacity := n << 1
+	if newCapacity < 0 {
+		panic("Sorry, ArrayDeque too big")
+	}
 	newArr := make([]interface{}, newCapacity)
 	arrays.CopyArr(a.elements, p, newArr, 0, r)
 	arrays.CopyArr(a.elements, 0, newArr, r, p)
 	a.elements = newArr
 	a.head = 0
 	a.tail = n
+}
+
+func (a *ArrayDeque) iterator() *DeqIterator {
+	return newIter(a)
+}
+
+func newIter(a *ArrayDeque) *DeqIterator {
+	return &DeqIterator{a, a.head, a.tail, -1}
+}
+
+type DeqIterator struct {
+	deque                  *ArrayDeque
+	cursor, fence, lastRet int
+}
+
+func (i *DeqIterator) HasNext() bool {
+	return i.cursor != i.fence
+}
+
+func (i *DeqIterator) Next() interface{} {
+	if i.cursor == i.fence {
+		panic("")
+	}
+	deque := i.deque
+	res := deque.elements[i.cursor]
+	if deque.tail != i.fence || res == nil {
+		panic("")
+	}
+	i.lastRet = i.cursor
+	i.cursor = (i.cursor + 1) & (cap(deque.elements) - 1)
+	return res
 }

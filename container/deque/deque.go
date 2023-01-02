@@ -13,4 +13,10 @@ type Deque interface {
 	Peek() interface{}
 	// PeekFirst , retrieves, but not remove, the first element of queue
 	PeekFirst() interface{}
+	// IsEmpty , return is emptny
+	IsEmpty() bool
+
+	OfferFirst(e interface{})
+
+	PollLast() interface{}
 }
